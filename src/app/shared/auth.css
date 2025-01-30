@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(to top, #0078ff, #060606 35%) fixed;
+  background: linear-gradient(to top, #0078ff, #060606 30%) fixed;
 }
 
 .auth-box {
