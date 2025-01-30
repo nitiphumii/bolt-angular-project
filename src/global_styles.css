@@ -1,0 +1,16 @@
+/* Import auth styles */
+@import './app/shared/auth.css';
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: #000;
+  color: white;
+  line-height: 1.6;
+}
