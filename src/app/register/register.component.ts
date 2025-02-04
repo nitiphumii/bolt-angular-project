@@ -1,16 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './register.component.html',
-  styles: []
+  styleUrls: ['./register.component.css']
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   registerData = {
     name: '',
     email: '',
@@ -18,14 +19,37 @@ export class RegisterComponent {
     confirmPassword: ''
   };
 
-  constructor(private router: Router) {}
+  isDarkMode = false;
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
+  
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+  
+  constructor(
+    private router: Router,
+    private themeService: ThemeService
+  ) {}
+
+  ngOnInit() {
+    this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
+
+  toggleDarkMode() {
+    this.themeService.toggleDarkMode();
+  }
 
   onSubmit() {
-    // Here you would typically handle registration
     console.log('Registration submitted:', this.registerData);
     
     if (this.registerData.password === this.registerData.confirmPassword) {
-      // For demo purposes, we'll just navigate to login
       this.router.navigate(['/login']);
     }
   }

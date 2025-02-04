@@ -26,5 +26,5 @@ body {
 app-root {
   display: block;
   min-height: 100vh;
-  background: linear-gradient(to top, #00a2ff, #000000 70%) fixed;
+  /* background: linear-gradient(to top, #00a2ff, #000000 70%) fixed; */
 }

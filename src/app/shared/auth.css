@@ -14,7 +14,6 @@
   max-width: 400px;
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
   border: 1px solid;
-  border-image: linear-gradient(45deg, #00c6ff, #0072ff) 1;
   animation: borderGlow 2s ease-in-out infinite alternate;
 }
 
@@ -68,7 +67,7 @@ button {
 button:hover {
   background: linear-gradient(45deg, #0072ff, #00c6ff);
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 198, 255, 0.3);
+  box-shadow: none;
 }
 
 .switch-text {
