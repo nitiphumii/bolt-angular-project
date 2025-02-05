@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../services/theme.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Component({
   selector: 'app-register',
@@ -13,8 +14,8 @@ import { ThemeService } from '../services/theme.service';
 })
 export class RegisterComponent implements OnInit {
   registerData = {
+    email:'',
     name: '',
-    email: '',
     password: '',
     confirmPassword: ''
   };
@@ -33,7 +34,8 @@ export class RegisterComponent implements OnInit {
   
   constructor(
     private router: Router,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -47,10 +49,25 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log('Registration submitted:', this.registerData);
-    
-    if (this.registerData.password === this.registerData.confirmPassword) {
-      this.router.navigate(['/login']);
+    if (this.registerData.password !== this.registerData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
     }
+
+    const formData = new FormData();
+    formData.append('username', this.registerData.email);
+    formData.append('password', this.registerData.password);
+
+    this.http.post('https://aa57-49-237-35-95.ngrok-free.app/register', formData)
+      .subscribe({
+        next: (response) => {
+          console.log('Registration successful:', response);
+          this.router.navigate(['/login']);
+        },
+        error: (error) => {
+          console.error('Registration failed:', error);
+          alert('Registration failed. Please try again.');
+        }
+      });
   }
 }

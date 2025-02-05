@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../services/theme.service';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-login',
@@ -13,7 +14,7 @@ import { ThemeService } from '../services/theme.service';
 })
 export class LoginComponent implements OnInit {
   loginData = {
-    email: '',
+    username: '',
     password: ''
   };
 
@@ -26,7 +27,8 @@ export class LoginComponent implements OnInit {
   
   constructor(
     private router: Router,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -40,7 +42,20 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log('Login submitted:', this.loginData);
-    this.router.navigate(['/home']);
+    const formData = new FormData();
+    formData.append('username', this.loginData.username);
+    formData.append('password', this.loginData.password);
+
+    this.http.post('https://aa57-49-237-35-95.ngrok-free.app/login', formData)
+      .subscribe({
+        next: (response) => {
+          console.log('Login successful:', response);
+          this.router.navigate(['/home']);
+        },
+        error: (error) => {
+          console.error('Login failed:', error);
+          alert('Login failed. Please check your credentials and try again.');
+        }
+      });
   }
 }
