@@ -18,6 +18,7 @@ interface UserInfo {
 }
 
 interface DashboardSummary {
+  ai_summary?: string;
   daily_sales?: Array<{ Date: string; "Total Sales": number; "Quantity Sold": number }>;
   monthly_sales?: Array<{ Date: string; "Total Sales": number; "Growth Rate (%)": number; "Quantity Sold": number }>;
   yearly_sales?: Array<{ Date: string; "Total Sales": number; "Growth Rate (%)": number; "Quantity Sold": number }>;
@@ -47,6 +48,8 @@ export class HomeComponent implements OnInit {
   isDarkMode = false;
   isLoading = false;
   isCompare = false;
+  isForecast_quantity = false;
+  isAi_summary = false;
   userFiles: FileItem[] = [];
   summary: DashboardSummary = {};
   selectedFile: string = '';
@@ -59,6 +62,7 @@ export class HomeComponent implements OnInit {
   selectedForecastPeriods: number = 3;
   forecastPeriods: number[] = Array.from({length: 10}, (_, i) => i + 2);
   showPaymentDialog = false;
+  ai_summary: string = '';
 
   @ViewChild('salesChart') salesChartRef!: ElementRef;
   @ViewChild('forecastChart') forecastChartRef!: ElementRef;
@@ -207,6 +211,9 @@ export class HomeComponent implements OnInit {
   }
 
   setReportType(type: ReportType) {
+    this.isForecast_quantity = false;
+    this.isAi_summary = false;
+    this.ai_summary = '';
     this.selectedReportType = type;
     if(type === 'compare_trends'){
       this.isCompare = true;
@@ -220,10 +227,19 @@ export class HomeComponent implements OnInit {
   }
 
   setReportType1(type: ReportType) {
+    this.isForecast_quantity = false;
+    this.isAi_summary = false;
+    this.ai_summary = '';
     this.selectedReportType1 = type;
     if (this.selectedFile) {
       this.fetchDashboardSummary();
     }
+  }
+
+  Gensummary() {
+    this.isForecast_quantity = true;
+    this.isAi_summary = true;
+    this.fetchDashboardSummary();
   }
 
   fetchDashboardSummary() {
@@ -237,7 +253,9 @@ export class HomeComponent implements OnInit {
     let params = new HttpParams()
       .set('file_id', this.selectedFile)
       .set('report_type', this.selectedReportType)
-      .set('time_filter', this.selectedReportType1);
+      .set('time_filter', this.selectedReportType1)
+      .set('forecast_quantity', this.isForecast_quantity)
+      .set('ai_summary', this.isAi_summary);
 
     // Add forecast periods parameter when in forecast mode
     if (this.selectedReportType === 'forecast') {
@@ -270,6 +288,9 @@ export class HomeComponent implements OnInit {
       next: (response) => {
         console.log("API Response:", response);
         this.summary = response;
+        if (this.summary.ai_summary) {
+          this.ai_summary = this.summary.ai_summary;
+        }
         this.initializeMonths();
         this.isLoading = false;
         this.renderCharts();
@@ -322,29 +343,28 @@ export class HomeComponent implements OnInit {
       let title = '';
       
       if (this.selectedReportType === 'compare_trends' && this.summary.compare_trends) {
-  let filteredTrends = this.summary.compare_trends;
+        let filteredTrends = this.summary.compare_trends;
 
-  // ✅ ถ้าอยู่ในโหมด Daily และเลือกเดือน กรองข้อมูลตามเดือน
-  if (this.selectedReportType1 === 'daily' && this.selectedMonth) {
-    filteredTrends = filteredTrends.filter(item => item.Date.startsWith(this.selectedMonth));
-  }
+        if (this.selectedReportType1 === 'daily' && this.selectedMonth) {
+          filteredTrends = filteredTrends.filter(item => item.Date.startsWith(this.selectedMonth));
+        }
 
-  const productGroups = filteredTrends.reduce((groups: { [key: string]: any[] }, item) => {
-    const product = item.Product;
-    if (!groups[product]) groups[product] = [];
-    groups[product].push(item);
-    return groups;
-  }, {});
+        const productGroups = filteredTrends.reduce((groups: { [key: string]: any[] }, item) => {
+          const product = item.Product;
+          if (!groups[product]) groups[product] = [];
+          groups[product].push(item);
+          return groups;
+        }, {});
 
-  const dates = [...new Set(filteredTrends.map(item => item.Date))];
+        const dates = [...new Set(filteredTrends.map(item => item.Date))];
 
-  const datasets = Object.entries(productGroups).map(([product, data], index) => ({
-    label: product,
-    data: data.map(item => item["Total Sales"]),
-    borderColor: this.getColor(index),
-    backgroundColor: this.getColor(index, 0.2),
-    fill: false,
-    tension: 0.4
+        const datasets = Object.entries(productGroups).map(([product, data], index) => ({
+          label: product,
+          data: data.map(item => item["Total Sales"]),
+          borderColor: this.getColor(index),
+          backgroundColor: this.getColor(index, 0.2),
+          fill: false,
+          tension: 0.4
         }));
 
         this.salesChart = new Chart(ctx, {

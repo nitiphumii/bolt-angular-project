@@ -138,9 +138,16 @@
       </div>
     </div>
 
+    <div>{{ this.ai_summary }}</div>
     <div *ngIf="summary" class="chart-container">
       <canvas #salesChart></canvas>
     </div>
+
+    <button 
+      (click)="Gensummary()"
+      class="filter-btn">
+      AI
+    </button>
 
     <div *ngIf="summary.top_products" class="top-products">
       <h2>Top Performing Products</h2>
