@@ -9,7 +9,13 @@ import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
+import { PaymentDialogComponent } from '../payment-dialog/payment-dialog.component';
 Chart.register(...registerables);
+
+interface UserInfo {
+  username: string;
+  points: number;
+}
 
 interface DashboardSummary {
   daily_sales?: Array<{ Date: string; "Total Sales": number; "Quantity Sold": number }>;
@@ -32,11 +38,12 @@ type ReportType = 'daily' | 'monthly' | 'yearly' | 'top_products' | 'compare_tre
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaymentDialogComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit {
+  userPoints: number = 0;
   isDarkMode = false;
   isLoading = false;
   isCompare = false;
@@ -51,6 +58,7 @@ export class HomeComponent implements OnInit {
   availableMonths: string[] = [];
   selectedForecastPeriods: number = 3;
   forecastPeriods: number[] = Array.from({length: 10}, (_, i) => i + 2);
+  showPaymentDialog = false;
 
   @ViewChild('salesChart') salesChartRef!: ElementRef;
   @ViewChild('forecastChart') forecastChartRef!: ElementRef;
@@ -71,9 +79,33 @@ export class HomeComponent implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
+    this.getUserInfo();
     this.getFiles();
     this.initializeMonths();
   }
+
+  getUserInfo() {
+  const headers = new HttpHeaders({
+    'Authorization': `Bearer ${this.authService.getToken()}`,
+    'Accept': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  });
+
+  this.http.get<{ user_info: { points: number; username: string } }>(
+    `https://d009-1-47-132-68.ngrok-free.app/user_info/`,
+    { headers }
+  ).pipe(
+    catchError(this.handleError.bind(this))
+  ).subscribe({
+    next: (response) => {
+      console.log("User Info API Response:", response); 
+      this.userPoints = response.user_info.points; 
+    },
+    error: (error) => {
+      console.error('Failed to fetch user info:', error);
+    }
+  });
+}
 
   initializeMonths() {
     if (!this.summary || !this.summary.daily_sales) {
@@ -529,5 +561,15 @@ export class HomeComponent implements OnInit {
       return throwError(() => new Error('Network error occurred'));
     }
     return throwError(() => new Error(error.error?.message || 'An unexpected error occurred'));
+  }
+
+  openPaymentDialog() {
+    this.showPaymentDialog = true;
+  }
+
+  closePaymentDialog() {
+    this.showPaymentDialog = false;
+    // Refresh user info to update points
+    this.getUserInfo();
   }
 }
