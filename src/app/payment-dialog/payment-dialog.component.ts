@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -12,8 +12,9 @@ import { environment } from '../../environments/environment';
   templateUrl: './payment-dialog.component.html',
   styleUrls: ['./payment-dialog.component.css']
 })
-export class PaymentDialogComponent {
+export class PaymentDialogComponent implements OnInit {
   amount: number = 0;
+  username: string = '';
   isProcessing: boolean = false;
   error: string = '';
   @Output() close = new EventEmitter<void>();
@@ -23,6 +24,31 @@ export class PaymentDialogComponent {
     private authService: AuthService
   ) {}
 
+  ngOnInit() {
+    this.getUserInfo();
+  }
+
+  getUserInfo() {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}`,
+      'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    });
+
+    this.http.get<{ user_info: { points: number; username: string } }>(
+      `${environment.BASE_URL}/user_info/`,
+      { headers }
+    ).subscribe({
+      next: (response) => {
+        this.username = response.user_info.username;
+      },
+      error: (error) => {
+        console.error('Failed to fetch user info:', error);
+        this.error = 'Failed to load user information';
+      }
+    });
+  }
+
   selectAmount(value: number) {
     this.amount = value;
   }
@@ -30,6 +56,11 @@ export class PaymentDialogComponent {
   processPayment() {
     if (!this.amount || this.amount < 1) {
       this.error = 'Please select an amount';
+      return;
+    }
+
+    if (!this.username) {
+      this.error = 'User information not available';
       return;
     }
 
@@ -42,7 +73,7 @@ export class PaymentDialogComponent {
       'ngrok-skip-browser-warning': 'true'
     });
 
-    const url = `${environment.BASE_URL}/create-payment-intent/?amount=${this.amount}&username=4`;
+    const url = `${environment.BASE_URL}/create-payment-intent/?amount=${this.amount}&username=${this.username}`;
 
     this.http.post<{ payment_link: string; message: string }>(
       url,

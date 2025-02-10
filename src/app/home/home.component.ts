@@ -92,7 +92,7 @@ export class HomeComponent implements OnInit {
   });
 
   this.http.get<{ user_info: { points: number; username: string } }>(
-    `https://d009-1-47-132-68.ngrok-free.app/user_info/`,
+    `${environment.BASE_URL}/user_info/`,
     { headers }
   ).pipe(
     catchError(this.handleError.bind(this))
