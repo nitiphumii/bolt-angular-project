@@ -14,7 +14,7 @@ Chart.register(...registerables);
 interface DashboardSummary {
   daily_sales?: Array<{ Date: string; "Total Sales": number; "Quantity Sold": number }>;
   monthly_sales?: Array<{ Date: string; "Total Sales": number; "Growth Rate (%)": number; "Quantity Sold": number }>;
-  yearly_sales?: Array<{ Date: string; "Total Sales": number; "Growth Rate (%)": number }>;
+  yearly_sales?: Array<{ Date: string; "Total Sales": number; "Growth Rate (%)": number; "Quantity Sold": number }>;
   top_products?: Array<{ Product: string; "Total Sales": number }>;
   compare_trends?: Array<{ Date: string; Product: string; "Total Sales": number; "Quantity Sold": number}>;
   forecast?: Array<{ Date: string; "Forecasted Sales": number }>;
@@ -49,6 +49,8 @@ export class HomeComponent implements OnInit {
   selectedMonth: string = '';
   availableProducts: Array<{ Product: string; "Total Sales": number }> = [];
   availableMonths: string[] = [];
+  selectedForecastPeriods: number = 3;
+  forecastPeriods: number[] = Array.from({length: 10}, (_, i) => i + 2);
 
   @ViewChild('salesChart') salesChartRef!: ElementRef;
   @ViewChild('forecastChart') forecastChartRef!: ElementRef;
@@ -202,8 +204,14 @@ export class HomeComponent implements OnInit {
     let params = new HttpParams()
       .set('file_id', this.selectedFile)
       .set('report_type', this.selectedReportType)
-      .set('time_filter', this.selectedReportType1)
-      .set('forecast_3', 'true');
+      .set('time_filter', this.selectedReportType1);
+
+    // Add forecast periods parameter when in forecast mode
+    if (this.selectedReportType === 'forecast') {
+      params = params.set('forecast_periods', this.selectedForecastPeriods.toString());
+    } else {
+      params = params.set('forecast_3', 'true');
+    }
 
     if (this.selectedProduct) {
       params = params.set('product_filter', this.selectedProduct);
@@ -385,27 +393,34 @@ export class HomeComponent implements OnInit {
         let labels: string[] = [];
         let data: number[] = [];
         let title = '';
+        let quantityData: number[] = [];
+        let filteredData: any[] = [];
 
         switch (this.selectedReportType) {
           case 'daily':
             if (this.summary.daily_sales) {
-              const filteredData = this.summary.daily_sales.filter(sale => sale.Date.startsWith(this.selectedMonth));
+              filteredData = this.summary.daily_sales.filter(sale => sale.Date.startsWith(this.selectedMonth));
               labels = filteredData.map(sale => sale.Date);
               data = filteredData.map(sale => sale["Total Sales"]);
+              quantityData = filteredData.map(sale => sale["Quantity Sold"]);
               title = `Daily Sales ${this.selectedMonth ? `- ${this.selectedMonth}` : ''}`;
             }
             break;
           case 'monthly':
             if (this.summary.monthly_sales) {
+              filteredData = this.summary.monthly_sales;
               labels = this.summary.monthly_sales.map(sale => sale.Date);
               data = this.summary.monthly_sales.map(sale => sale["Total Sales"]);
+              quantityData = filteredData.map(sale => sale["Quantity Sold"]);
               title = 'Monthly Sales';
             }
             break;
           case 'yearly':
             if (this.summary.yearly_sales) {
+              filteredData = this.summary.yearly_sales;
               labels = this.summary.yearly_sales.map(sale => sale.Date);
               data = this.summary.yearly_sales.map(sale => sale["Total Sales"]);
+              quantityData = filteredData.map(sale => sale["Quantity Sold"]);
               title = 'Yearly Sales';
             }
             break;
@@ -431,6 +446,35 @@ export class HomeComponent implements OnInit {
                 title: {
                   display: true,
                   text: title
+                },
+                legend: {
+                  display: true
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (tooltipItem) => {
+                      const index = tooltipItem.dataIndex;
+                      let totalSales = filteredData?.[index]?.["Total Sales"] ?? 0;
+                      let quantitySold = filteredData?.[index]?.["Quantity Sold"] ?? 0;
+              
+                      return [`Total Sales: ${totalSales.toLocaleString()}`, `Quantity Sold: ${quantitySold.toLocaleString()}`];
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Total Sales'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: this.selectedReportType === 'daily' ? 'Date' : this.selectedReportType === 'monthly' ? 'Month' : 'Year'
+                  }
                 }
               }
             }
