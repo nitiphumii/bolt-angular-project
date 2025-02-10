@@ -180,6 +180,7 @@ export class HomeComponent implements OnInit {
       this.isCompare = true;
     } else {
       this.isCompare = false;
+      this.setReportType1('monthly')
     }
     if (this.selectedFile) {
       this.fetchDashboardSummary();
@@ -284,26 +285,34 @@ export class HomeComponent implements OnInit {
 
     if (this.salesChartRef) {
       const ctx = this.salesChartRef.nativeElement.getContext('2d');
+      let labels: string[] = [];
+      let data: any[] = [];
+      let title = '';
       
       if (this.selectedReportType === 'compare_trends' && this.summary.compare_trends) {
-        const productGroups = this.summary.compare_trends.reduce((groups: { [key: string]: any[] }, item) => {
-          const product = item.Product;
-          if (!groups[product]) {
-            groups[product] = [];
-          }
-          groups[product].push(item);
-          return groups;
-        }, {});
+  let filteredTrends = this.summary.compare_trends;
 
-        const dates = [...new Set(this.summary.compare_trends.map(item => item.Date))];
+  // ✅ ถ้าอยู่ในโหมด Daily และเลือกเดือน กรองข้อมูลตามเดือน
+  if (this.selectedReportType1 === 'daily' && this.selectedMonth) {
+    filteredTrends = filteredTrends.filter(item => item.Date.startsWith(this.selectedMonth));
+  }
 
-        const datasets = Object.entries(productGroups).map(([product, data], index) => ({
-          label: product,
-          data: data.map(item => item["Total Sales"]),
-          borderColor: this.getColor(index),
-          backgroundColor: this.getColor(index, 0.2),
-          fill: false,
-          tension: 0.4
+  const productGroups = filteredTrends.reduce((groups: { [key: string]: any[] }, item) => {
+    const product = item.Product;
+    if (!groups[product]) groups[product] = [];
+    groups[product].push(item);
+    return groups;
+  }, {});
+
+  const dates = [...new Set(filteredTrends.map(item => item.Date))];
+
+  const datasets = Object.entries(productGroups).map(([product, data], index) => ({
+    label: product,
+    data: data.map(item => item["Total Sales"]),
+    borderColor: this.getColor(index),
+    backgroundColor: this.getColor(index, 0.2),
+    fill: false,
+    tension: 0.4
         }));
 
         this.salesChart = new Chart(ctx, {
@@ -453,11 +462,20 @@ export class HomeComponent implements OnInit {
                 tooltip: {
                   callbacks: {
                     label: (tooltipItem) => {
+                      const datasets = tooltipItem.chart.data.datasets; 
                       const index = tooltipItem.dataIndex;
                       let totalSales = filteredData?.[index]?.["Total Sales"] ?? 0;
                       let quantitySold = filteredData?.[index]?.["Quantity Sold"] ?? 0;
+
+                       if (this.selectedReportType === 'compare_trends') {
+        const product = datasets[tooltipItem.datasetIndex].label;
+        totalSales = datasets[tooltipItem.datasetIndex].data[index] ?? 0;
+        return [`${product}: ${totalSales.toLocaleString()}`];
+      } else {
+        totalSales = filteredData?.[index]?.["Total Sales"] ?? 0;
+        quantitySold = filteredData?.[index]?.["Quantity Sold"] ?? 0;
               
-                      return [`Total Sales: ${totalSales.toLocaleString()}`, `Quantity Sold: ${quantitySold.toLocaleString()}`];
+                      return [`Total Sales: ${totalSales.toLocaleString()}`, `Quantity Sold: ${quantitySold.toLocaleString()}`];}
                     }
                   }
                 }
