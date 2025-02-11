@@ -1,5 +1,5 @@
 <div class="payment-dialog-overlay" (click)="close.emit()">
-  <div class="payment-dialog" (click)="$event.stopPropagation()">
+  <div class="payment-dialog" [ngClass]="{ 'dark-mode': isDarkMode }" (click)="$event.stopPropagation()">
     <h2>Buy Points</h2>
     <div class="point-info">
       <p>Choose an amount to purchase points:</p>
@@ -16,7 +16,6 @@
         (click)="selectAmount(value)"
         class="amount-option">
         <span class="amount">{{ value }} THB</span>
-        <!-- <span class="points">{{ value }} Points</span> -->
       </button>
     </div>
     <div class="buttons">

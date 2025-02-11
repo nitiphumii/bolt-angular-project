@@ -32,6 +32,15 @@
         accept=".csv,.xlsx,.xls"
         [disabled]="isLoading"
       >
+      <div class="file-requirements">
+        <p class="requirements-title">Required File Format:</p>
+        <ul class="requirements-list">
+          <li><strong>Date:</strong> Transaction date (D-M-YYYY)</li>
+          <li><strong>Product:</strong> Product name</li>
+          <li><strong>Quantity:</strong> Number of units sold</li>
+          <li><strong>Price:</strong> Price per unit</li>
+        </ul>
+      </div>
     </div>
 
     <div *ngIf="isLoading" class="loading-overlay">
