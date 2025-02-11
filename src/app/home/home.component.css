@@ -448,3 +448,103 @@ select.form-control:focus {
   border-color: #8f7ff7;
   box-shadow: 0 0 0 3px rgba(143, 127, 247, 0.15);
 }
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.loading-popup {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.dark-mode .loading-popup {
+  background: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  color: #6c5ce7;
+  font-size: 2rem;
+}
+
+.loading-text {
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.dark-mode .loading-text {
+  color: #e2e8f0;
+}
+
+/* AI Summary Section */
+.ai-summary {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  position: relative;
+  border-left: 4px solid #6c5ce7;
+}
+
+.dark-mode .ai-summary {
+  background: #1e293b;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.ai-summary::before {
+  content: '🤖 AI Analysis';
+  display: block;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #6c5ce7;
+}
+
+.ai-summary-content {
+  color: #4a5568;
+  line-height: 1.6;
+  font-size: 1rem;
+  white-space: pre-line;
+}
+
+.dark-mode .ai-summary-content {
+  color: #e2e8f0;
+}

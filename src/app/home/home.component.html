@@ -34,9 +34,16 @@
       >
     </div>
 
-    <div *ngIf="isLoading" class="loading">
+    <!-- <div *ngIf="isLoading" class="loading">
       <span class="material-symbols-outlined spinning">sync</span>
       Processing your data...
+    </div> -->
+
+    <div *ngIf="isLoading" class="loading-overlay">
+      <div class="loading-popup">
+        <span class="material-symbols-outlined loading-spinner">sync</span>
+        <span class="loading-text">Processing your data...</span>
+      </div>
     </div>
 
     <div class="controls-section">
@@ -138,7 +145,10 @@
       </div>
     </div>
 
-    <div>{{ this.ai_summary }}</div>
+    <div *ngIf="ai_summary" class="ai-summary">
+      <div class="ai-summary-content">{{ ai_summary }}</div>
+    </div>
+    
     <div *ngIf="summary" class="chart-container">
       <canvas #salesChart></canvas>
     </div>
@@ -146,7 +156,7 @@
     <button 
       (click)="Gensummary()"
       class="filter-btn">
-      AI
+      AI summary
     </button>
 
     <div *ngIf="summary.top_products" class="top-products">

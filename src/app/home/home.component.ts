@@ -286,13 +286,13 @@ export class HomeComponent implements OnInit {
       catchError(this.handleError.bind(this))
     ).subscribe({
       next: (response) => {
+        this.isLoading = false;
         console.log("API Response:", response);
         this.summary = response;
         if (this.summary.ai_summary) {
           this.ai_summary = this.summary.ai_summary;
         }
         this.initializeMonths();
-        this.isLoading = false;
         this.renderCharts();
       },
       error: (error) => {
