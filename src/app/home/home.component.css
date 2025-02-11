@@ -604,3 +604,18 @@ select.form-control:focus {
 .dark-mode .ai-summary-content {
   color: #e2e8f0;
 }
+
+.point-requirement {
+  margin-top: 1rem;
+  color: #6c5ce7;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dark-mode .point-requirement {
+  color: #8f7ff7;
+  border-color: #334155;
+}
