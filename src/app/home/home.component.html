@@ -34,11 +34,6 @@
       >
     </div>
 
-    <!-- <div *ngIf="isLoading" class="loading">
-      <span class="material-symbols-outlined spinning">sync</span>
-      Processing your data...
-    </div> -->
-
     <div *ngIf="isLoading" class="loading-overlay">
       <div class="loading-popup">
         <span class="material-symbols-outlined loading-spinner">sync</span>
@@ -170,8 +165,6 @@
     </div>
   </div>
   
-  <!-- Rest of your existing template -->
-
   <app-payment-dialog 
     *ngIf="showPaymentDialog"
     (close)="closePaymentDialog()"

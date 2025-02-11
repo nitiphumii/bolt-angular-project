@@ -63,6 +63,7 @@ export class HomeComponent implements OnInit {
   forecastPeriods: number[] = Array.from({length: 10}, (_, i) => i + 2);
   showPaymentDialog = false;
   ai_summary: string = '';
+  pollingInterval: any; 
 
   @ViewChild('salesChart') salesChartRef!: ElementRef;
   @ViewChild('forecastChart') forecastChartRef!: ElementRef;
@@ -89,6 +90,7 @@ export class HomeComponent implements OnInit {
   }
 
   getUserInfo() {
+    this.isLoading = false;
   const headers = new HttpHeaders({
     'Authorization': `Bearer ${this.authService.getToken()}`,
     'Accept': 'application/json',
@@ -103,7 +105,10 @@ export class HomeComponent implements OnInit {
   ).subscribe({
     next: (response) => {
       console.log("User Info API Response:", response); 
-      this.userPoints = response.user_info.points; 
+      if (this.userPoints !== response.user_info.points) {
+        this.userPoints = response.user_info.points;
+        this.stopPolling();
+      }
     },
     error: (error) => {
       console.error('Failed to fetch user info:', error);
@@ -150,8 +155,13 @@ export class HomeComponent implements OnInit {
       catchError(this.handleError.bind(this))
     ).subscribe({
       next: (response) => {
+        // this.userFiles = response.files;
+        if (this.userFiles !== response.files) {
         this.userFiles = response.files;
+        this.startPolling();
+      }
         this.isLoading = false;
+        this.startPolling();
       },
       error: (error) => {
         this.isLoading = false;
@@ -585,11 +595,31 @@ export class HomeComponent implements OnInit {
 
   openPaymentDialog() {
     this.showPaymentDialog = true;
+    this.isLoading = false;
+    this.getUserInfo();
+    this.startPolling();
   }
 
   closePaymentDialog() {
     this.showPaymentDialog = false;
-    // Refresh user info to update points
+    this.isLoading = false;
     this.getUserInfo();
+  }
+
+  startPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
+
+    this.pollingInterval = setInterval(() => {
+      this.getUserInfo();
+    }, 3000);
+  }
+
+  stopPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
   }
 }
