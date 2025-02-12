@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../services/theme.service';
 import { AuthService } from '../services/auth.service';
@@ -10,6 +10,9 @@ import { throwError } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { PaymentDialogComponent } from '../payment-dialog/payment-dialog.component';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.css';
+
 Chart.register(...registerables);
 
 interface UserInfo {
@@ -43,7 +46,12 @@ type ReportType = 'daily' | 'monthly' | 'yearly' | 'top_products' | 'compare_tre
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, AfterViewInit {
+  @ViewChild('dateRangePicker') dateRangePickerEl!: ElementRef;
+  private flatpickrInstance: any;
+  minDate: Date | null = null;
+  maxDate: Date | null = null;
+  
   userPoints: number = 0;
   isDarkMode = false;
   isLoading = false;
@@ -89,55 +97,93 @@ export class HomeComponent implements OnInit {
     this.initializeMonths();
   }
 
+  ngAfterViewInit() {
+    this.initializeDatePicker();
+  }
+
+  initializeDatePicker() {
+    if (this.dateRangePickerEl) {
+      this.flatpickrInstance = flatpickr(this.dateRangePickerEl.nativeElement, {
+        mode: 'range',
+        dateFormat: 'Y-m-d',
+        minDate: this.minDate ?? undefined,
+        maxDate: this.maxDate ?? undefined,
+        onChange: (selectedDates) => {
+          if (selectedDates.length === 2) {
+            const [start, end] = selectedDates;
+            // const startDate = this.formatDate(start);
+            // const endDate = this.formatDate(end);
+            this.selectedMonth = `${this.formatDate(start)}:${this.formatDate(end)}`;
+            // this.selectedMonth = `${startDate}:${endDate}`;
+            this.renderCharts();
+          }
+        }
+      });
+    }
+  }
+
+  formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   getUserInfo() {
     this.isLoading = false;
-  const headers = new HttpHeaders({
-    'Authorization': `Bearer ${this.authService.getToken()}`,
-    'Accept': 'application/json',
-    'ngrok-skip-browser-warning': 'true'
-  });
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}`,
+      'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    });
 
-  this.http.get<{ user_info: { points: number; username: string } }>(
-    `${environment.BASE_URL}/user_info/`,
-    { headers }
-  ).pipe(
-    catchError(this.handleError.bind(this))
-  ).subscribe({
-    next: (response) => {
-      console.log("User Info API Response:", response); 
-      if (this.userPoints !== response.user_info.points) {
-        this.userPoints = response.user_info.points;
-        this.stopPolling();
+    this.http.get<{ user_info: { points: number; username: string } }>(
+      `${environment.BASE_URL}/user_info/`,
+      { headers }
+    ).pipe(
+      catchError(this.handleError.bind(this))
+    ).subscribe({
+      next: (response) => {
+        console.log("User Info API Response:", response); 
+        if (this.userPoints !== response.user_info.points) {
+          this.userPoints = response.user_info.points;
+          this.stopPolling();
+        }
+      },
+      error: (error) => {
+        console.error('Failed to fetch user info:', error);
       }
-    },
-    error: (error) => {
-      console.error('Failed to fetch user info:', error);
-    }
-  });
-}
+    });
+  }
 
   initializeMonths() {
     if (!this.summary || !this.summary.daily_sales) {
       console.warn("No daily sales data available.");
       return;
     }
-    const monthSet = new Set<string>();
 
-    this.summary.daily_sales.forEach(sale => {
-      const date = sale.Date;
-      const yearMonth = date.substring(0, 7);
-      monthSet.add(yearMonth);
-    });
+    const dates = this.summary.daily_sales.map(sale => new Date(sale.Date));
+    this.minDate = new Date(Math.min(...dates.map(date => date.getTime())));
+    this.maxDate = new Date(Math.max(...dates.map(date => date.getTime())));
 
-    this.availableMonths = Array.from(monthSet).sort();
-
-    const currentDate = new Date();
-    this.selectedMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-    this.selectedMonth = "";
+    if (this.flatpickrInstance) {
+      this.flatpickrInstance.set('minDate', this.minDate);
+      this.flatpickrInstance.set('maxDate', this.maxDate);
+      
+      // Set default date range to show all data
+      this.flatpickrInstance.setDate([this.minDate, this.maxDate]);
+      this.selectedMonth = `${this.formatDate(this.minDate)}:${this.formatDate(this.maxDate)}`;
+    }else {
+        console.error("flatpickrInstance is undefined. Initializing DatePicker again.");
+        this.initializeDatePicker();  // ✅ ถ้ายังไม่มี instance ให้สร้างใหม่
+    }
   }
 
   toggleDarkMode() {
     this.themeService.toggleDarkMode();
+    if (this.flatpickrInstance) {
+      this.flatpickrInstance.set('theme', this.isDarkMode ? 'dark' : 'light');
+    }
   }
 
   getFiles() {
@@ -155,11 +201,10 @@ export class HomeComponent implements OnInit {
       catchError(this.handleError.bind(this))
     ).subscribe({
       next: (response) => {
-        // this.userFiles = response.files;
         if (this.userFiles !== response.files) {
-        this.userFiles = response.files;
-        this.startPolling();
-      }
+          this.userFiles = response.files;
+          this.startPolling();
+        }
         this.isLoading = false;
         this.startPolling();
       },
@@ -225,6 +270,9 @@ export class HomeComponent implements OnInit {
     this.isAi_summary = false;
     this.ai_summary = '';
     this.selectedReportType = type;
+    // if (type === 'daily') {
+        this.resetDatePicker(); // ✅ รีเซ็ต DatePicker
+    // }
     if(type === 'compare_trends'){
       this.isCompare = true;
     } else {
@@ -235,6 +283,13 @@ export class HomeComponent implements OnInit {
       this.fetchDashboardSummary();
     }
   }
+
+resetDatePicker() {
+    if (this.flatpickrInstance) {
+        this.flatpickrInstance.destroy(); // ✅ ลบ DatePicker เก่าทิ้ง
+    }
+    this.initializeDatePicker(); // ✅ สร้างใหม่
+}
 
   setReportType1(type: ReportType) {
     this.isForecast_quantity = false;
@@ -267,7 +322,6 @@ export class HomeComponent implements OnInit {
       .set('forecast_quantity', this.isForecast_quantity)
       .set('ai_summary', this.isAi_summary);
 
-    // Add forecast periods parameter when in forecast mode
     if (this.selectedReportType === 'forecast') {
       params = params.set('forecast_periods', this.selectedForecastPeriods.toString());
     } else {
@@ -302,6 +356,7 @@ export class HomeComponent implements OnInit {
         if (this.summary.ai_summary) {
           this.ai_summary = this.summary.ai_summary;
         }
+        this.initializeDatePicker();
         this.initializeMonths();
         this.renderCharts();
       },
@@ -356,7 +411,11 @@ export class HomeComponent implements OnInit {
         let filteredTrends = this.summary.compare_trends;
 
         if (this.selectedReportType1 === 'daily' && this.selectedMonth) {
-          filteredTrends = filteredTrends.filter(item => item.Date.startsWith(this.selectedMonth));
+          const [startDate, endDate] = this.selectedMonth.split(':');
+          filteredTrends = filteredTrends.filter(item => {
+            const itemDate = item.Date;
+            return itemDate >= startDate && itemDate <= endDate;
+          });
         }
 
         const productGroups = filteredTrends.reduce((groups: { [key: string]: any[] }, item) => {
@@ -470,11 +529,17 @@ export class HomeComponent implements OnInit {
         switch (this.selectedReportType) {
           case 'daily':
             if (this.summary.daily_sales) {
-              filteredData = this.summary.daily_sales.filter(sale => sale.Date.startsWith(this.selectedMonth));
+              filteredData = this.summary.daily_sales;
+              if (this.selectedMonth) {
+                const [startDate, endDate] = this.selectedMonth.split(':');
+                filteredData = filteredData.filter(sale => 
+                  sale.Date >= startDate && sale.Date <= endDate
+                );
+              }
               labels = filteredData.map(sale => sale.Date);
               data = filteredData.map(sale => sale["Total Sales"]);
               quantityData = filteredData.map(sale => sale["Quantity Sold"]);
-              title = `Daily Sales ${this.selectedMonth ? `- ${this.selectedMonth}` : ''}`;
+              title = `Daily Sales ${this.selectedMonth ? `(${this.selectedMonth.replace(':', ' to ')})` : ''}`;
             }
             break;
           case 'monthly':
@@ -529,15 +594,15 @@ export class HomeComponent implements OnInit {
                       let totalSales = filteredData?.[index]?.["Total Sales"] ?? 0;
                       let quantitySold = filteredData?.[index]?.["Quantity Sold"] ?? 0;
 
-                       if (this.selectedReportType === 'compare_trends') {
-        const product = datasets[tooltipItem.datasetIndex].label;
-        totalSales = datasets[tooltipItem.datasetIndex].data[index] ?? 0;
-        return [`${product}: ${totalSales.toLocaleString()}`];
-      } else {
-        totalSales = filteredData?.[index]?.["Total Sales"] ?? 0;
-        quantitySold = filteredData?.[index]?.["Quantity Sold"] ?? 0;
-              
-                      return [`Total Sales: ${totalSales.toLocaleString()}`, `Quantity Sold: ${quantitySold.toLocaleString()}`];}
+                      if (this.selectedReportType === 'compare_trends') {
+                        const product = datasets[tooltipItem.datasetIndex].label;
+                        totalSales = datasets[tooltipItem.datasetIndex].data[index] ?? 0;
+                        return [`${product}: ${totalSales.toLocaleString()}`];
+                      } else {
+                        totalSales = filteredData?.[index]?.["Total Sales"] ?? 0;
+                        quantitySold = filteredData?.[index]?.["Quantity Sold"] ?? 0;
+                        return [`Total Sales: ${totalSales.toLocaleString()}`, `Quantity Sold: ${quantitySold.toLocaleString()}`];
+                      }
                     }
                   }
                 }

@@ -1,6 +1,6 @@
 <div class="container" [ngClass]="{ 'dark-mode': isDarkMode }">
   <nav class="navbar">
-    <div class="logo">Sales Analytics</div>
+    <div class="logo">AI-Driven Sales Forecasting</div>
     <div class="nav-links">
       <a href="#" class="nav-link">Dashboard</a>
       <span class="nav-link" (click)="openPaymentDialog()">Payment</span>
@@ -71,7 +71,7 @@
         </select>
       </div>
 
-      <div class="month-selection" *ngIf="selectedReportType === 'daily' || selectedReportType1 === 'daily'">
+      <!-- <div class="month-selection" *ngIf="selectedReportType === 'daily' || selectedReportType1 === 'daily'">
         <label for="month-select">Select Month:</label>
         <select [(ngModel)]="selectedMonth" (change)="onMonthSelect(selectedMonth)" class="form-control">
           <option value="" disabled selected>Select a month</option>
@@ -79,7 +79,19 @@
             {{ month }}
           </option>
         </select>
-      </div>
+      </div> -->
+
+      <div class="month-selection" *ngIf="selectedReportType === 'daily' || selectedReportType1 === 'daily'">
+  <label for="date-range">Select Date Range:</label>
+  <div class="date-picker-wrapper">
+    <input
+      type="text"
+      #dateRangePicker
+      class="date-range-input"
+      placeholder="Select date range"
+      readonly>
+  </div>
+</div>
 
       <div class="report-type-filters">
         <button 
