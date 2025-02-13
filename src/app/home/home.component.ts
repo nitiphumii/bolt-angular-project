@@ -68,7 +68,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   availableProducts: Array<{ Product: string; "Total Sales": number }> = [];
   availableMonths: string[] = [];
   selectedForecastPeriods: number = 3;
-  forecastPeriods: number[] = Array.from({length: 10}, (_, i) => i + 2);
+  forecastPeriods: number[] = Array.from({length: 11}, (_, i) => i + 2);
   showPaymentDialog = false;
   ai_summary: string = '';
   pollingInterval: any; 
